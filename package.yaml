@@ -1,0 +1,55 @@
+name:                sdb
+version:             0.1.0.0
+github:              "ahanikel/sdb"
+license:             BSD3
+author:              "Axel Hanikel"
+maintainer:          "ahanikel@adobe.com"
+copyright:           "2018 Adobe Inc."
+
+extra-source-files:
+- README.md
+- ChangeLog.md
+
+# Metadata used when publishing your package
+# synopsis:            Short description of your package
+# category:            Web
+
+# To avoid duplicated efforts in documentation and dealing with the
+# complications of embedding Haddock markup inside cabal files, it is
+# common to point users to the README.md file.
+description:         Please see the README on GitHub at <https://github.com/ahanikel/sdb#readme>
+
+dependencies:
+- base >= 4.7 && < 5
+- directory
+- regex-compat
+- tar
+- bytestring
+- attoparsec
+- utf8-string
+
+library:
+  source-dirs: src
+
+executables:
+  sdb:
+    main:                Main.hs
+    source-dirs:         app
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - sdb
+
+tests:
+  sdb-test:
+    main:                Spec.hs
+    source-dirs:         test
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - sdb
+    - HUnit
