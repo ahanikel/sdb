@@ -1,6 +1,13 @@
 {-# LANGUAGE RecordWildCards #-}
 
-module Segment (segments, segment) where
+module Segment ( segments
+               , segment
+               , segmentType
+               , SegmentType(..)
+               , segmentIdFromMsbLsb
+               , Reference(..)
+               , parseReference
+               ) where
 
 import           Display
 import           ParseUtil
@@ -23,12 +30,9 @@ import           Text.Regex                 ( mkRegex
 segments :: FilePath -> IO ()
 segments path = do
   ids <- segmentIds <$> listEntries <$> BL.readFile path
-  mapM_ (putStrLn . showId) ids
+  mapM_ (putStrLn . displayId) ids
   where
-    showId id = kind id ++ id
-    kind id   = if isBulkSegmentId id
-                then "bulk "
-                else "data "
+    displayId id = (display $ segmentType id) ++ " " ++ id
 
 segment :: FilePath -> SegmentId -> IO ()
 segment path segmentId = do
@@ -36,6 +40,19 @@ segment path segmentId = do
   let segment = findSegment segmentId segments
   either putStrLn (putStrLn . display) segment
   
+segmentType :: SegmentId -> SegmentType
+segmentType id = if isBulkSegmentId id
+                 then SegmentTypeBulk
+                 else SegmentTypeData
+
+data SegmentType = SegmentTypeBulk
+                 | SegmentTypeData
+  deriving (Show)
+
+instance Display SegmentType where
+  display SegmentTypeBulk = "bulk"
+  display SegmentTypeData = "data"
+
 data Segment = Segment { segVersion        :: Word8
                        , segGeneration     :: Word32
                        , segFullGeneration :: Word32
@@ -52,8 +69,8 @@ instance Display Segment where
                        , "fullGeneration " ++ show segFullGeneration
                        , "compacted "      ++ show segCompacted
                        ]
-                       ++ map display segReferences
-                       ++ map display segRecords
+                       ++ map (("reference " ++) . display) segReferences
+                       ++ map (("record " ++)    . display) segRecords
 
 data Reference = Reference { refMsb :: Word64
                            , refLsb :: Word64
@@ -61,7 +78,7 @@ data Reference = Reference { refMsb :: Word64
   deriving (Show)
 
 instance Display Reference where
-  display Reference {..} = printf "reference %016x%016x" refMsb refLsb
+  display Reference {..} = printf "%016x%016x" refMsb refLsb
 
 data Record = Record { recNumber :: Word32
                      , recType   :: RecordType
@@ -71,8 +88,7 @@ data Record = Record { recNumber :: Word32
 
 instance Display Record where
   display Record {..} = intercalate " "
-                        [ "record"
-                        , show recNumber
+                        [ show recNumber
                         , show recType
                         , showHex recOffset ""
                         ]
@@ -139,6 +155,8 @@ isAnySegment = toBoolean . matchRegex segmentRegex
     segmentRegex = mkRegex "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\\.[0-9a-f]{8}$"
 
 segmentIdFromEntryName = normalizeSegmentId . entryNameToSegmentId
+
+segmentIdFromMsbLsb msb lsb = printf "%016x%016x" msb lsb
 
 entryNameToSegmentId = Prelude.takeWhile (/= '.')
 
