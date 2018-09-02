@@ -27,6 +27,7 @@ dependencies:
 - bytestring
 - attoparsec
 - utf8-string
+- MissingH
 
 library:
   source-dirs: src
