@@ -5,6 +5,7 @@ import Store
 import TarArchive
 import Index
 import Graph
+import Binaries
 
 import System.Environment (getArgs)
 
@@ -18,3 +19,4 @@ main = do
     ["segment",  tarFile, id] -> segment tarFile id
     ["index",    tarFile]     -> index tarFile
     ["graph",    tarFile]     -> graph tarFile
+    ["binaries", tarFile]     -> binaries tarFile
