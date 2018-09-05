@@ -17,6 +17,7 @@ import           Prelude                    hiding ( take )
 import           Codec.Archive.Tar
 import           Control.Monad
 import           Data.Attoparsec.ByteString
+import           Data.Bits
 import qualified Data.ByteString.Lazy       as BL
 import qualified Data.ByteString.UTF8       as BS8
 import           Data.List                  ( intercalate )
@@ -180,7 +181,22 @@ parseSegment 12 = do
       segCompacted       = True
   nReferences           <- parseBigEndianUInt32
   nRecords              <- parseBigEndianUInt32
-  _                     <- take 10
+  _                     <- take 10   -- header size is 32 and we're at 22 so far
+  segReferences         <- count (fromIntegral nReferences) parseReference
+  segRecords            <- count (fromIntegral nRecords) parseRecord
+  return Segment {..}
+
+parseSegment 13 = do
+  magic                 <- string $ BS8.fromString "0aK"
+  segVersion            <- anyWord8
+  segFullGeneration'    <- parseBigEndianUInt32
+  let segFullGeneration  = segFullGeneration' .&. 0x7fffffff
+      segCompacted       = segFullGeneration' .&. 0x80000000 /= 0
+  _                     <- take 2
+  segGeneration         <- parseBigEndianUInt32
+  nReferences           <- parseBigEndianUInt32
+  nRecords              <- parseBigEndianUInt32
+  _                     <- take 10   -- header size is 32 and we're at 22 so far
   segReferences         <- count (fromIntegral nReferences) parseReference
   segRecords            <- count (fromIntegral nRecords) parseRecord
   return Segment {..}
