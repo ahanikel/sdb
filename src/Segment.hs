@@ -11,6 +11,7 @@ module Segment ( segments
 
 import           Display
 import           ParseUtil
+import           Record
 import           TarArchive
 
 import           Prelude                    hiding ( take )
@@ -59,7 +60,7 @@ data Segment = Segment { segVersion        :: Word8
                        , segFullGeneration :: Word32
                        , segCompacted      :: Bool
                        , segReferences     :: [Reference]
-                       , segRecords        :: [Record]
+                       , segRecords        :: [RecordRef]
                        }
   deriving (Show)
 
@@ -81,46 +82,18 @@ data Reference = Reference { refMsb :: Word64
 instance Display Reference where
   display Reference {..} = printf "%016x%016x" refMsb refLsb
 
-data Record = Record { recNumber :: Word32
-                     , recType   :: RecordType
-                     , recOffset :: Word32
-                     }
+data RecordRef = RecordRef { recNumber :: Word32
+                           , recType   :: RecordType
+                           , recOffset :: Word32
+                           }
   deriving (Show)
 
-instance Display Record where
-  display Record {..} = intercalate " "
+instance Display RecordRef where
+  display RecordRef {..} = intercalate " "
                         [ show recNumber
                         , show recType
                         , showHex recOffset ""
                         ]
-
-data RecordType = RecTypeMapLeaf
-                | RecTypeMapBranch
-                | RecTypeListBucket
-                | RecTypeList
-                | RecTypeValue
-                | RecTypeBlock
-                | RecTypeTemplate
-                | RecTypeNode
-                | RecTypeBlobID
-  deriving (Show)
-
-instance Display RecordType where
-  display = show
-
-recordTypeFromWord8 :: Word8 -> RecordType
-recordTypeFromWord8 = (recTypes !!) . fromIntegral
-  where
-    recTypes = [ RecTypeMapLeaf
-               , RecTypeMapBranch
-               , RecTypeListBucket
-               , RecTypeList
-               , RecTypeValue
-               , RecTypeBlock
-               , RecTypeTemplate
-               , RecTypeNode
-               , RecTypeBlobID
-               ]
 
 type    SegmentId    = String
 
@@ -183,7 +156,7 @@ parseSegment 12 = do
   nRecords              <- parseBigEndianUInt32
   _                     <- take 10   -- header size is 32 and we're at 22 so far
   segReferences         <- count (fromIntegral nReferences) parseReference
-  segRecords            <- count (fromIntegral nRecords) parseRecord
+  segRecords            <- count (fromIntegral nRecords) parseRecordRef
   return Segment {..}
 
 parseSegment 13 = do
@@ -198,7 +171,7 @@ parseSegment 13 = do
   nRecords              <- parseBigEndianUInt32
   _                     <- take 10   -- header size is 32 and we're at 22 so far
   segReferences         <- count (fromIntegral nReferences) parseReference
-  segRecords            <- count (fromIntegral nRecords) parseRecord
+  segRecords            <- count (fromIntegral nRecords) parseRecordRef
   return Segment {..}
 
 parseReference :: Parser Reference
@@ -207,9 +180,9 @@ parseReference = do
   refLsb <- parseBigEndianUInt64
   return Reference {..}
 
-parseRecord :: Parser Record
-parseRecord = do
+parseRecordRef :: Parser RecordRef
+parseRecordRef = do
   recNumber <- parseBigEndianUInt32
   recType   <- recordTypeFromWord8 <$> anyWord8
   recOffset <- parseBigEndianUInt32
-  return Record {..}
+  return RecordRef {..}
