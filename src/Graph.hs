@@ -17,12 +17,12 @@ import qualified Data.List            as L
 import           Data.Word
 import           Text.Printf
 
-graph :: FilePath -> IO ()
+graph :: FilePath -> IO [String]
 graph path = do
   entries         <- listEntries <$> BL.readFile path
   let graphEntries = filterEntriesByName (".gph" `L.isSuffixOf`) entries
       graphContent = listEntryContents graphEntries
-  mapM_ (putStrLn . either id display . parseGraph . BL.toStrict) graphContent
+  return $ map (either id display . parseGraph . BL.toStrict) graphContent
 
 data GraphEntry = GraphEntry { gphReference :: Reference
                              , gphReferences :: [Reference]

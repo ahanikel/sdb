@@ -10,10 +10,9 @@ import           Codec.Archive.Tar
 import           Control.Exception (throw)
 import qualified Data.ByteString.Lazy as BL
 
-entries :: FilePath -> IO ()
-entries path = do
-  entries <- listEntries <$> BL.readFile path
-  mapM_ (putStrLn . entryPath) entries
+entries :: FilePath -> IO [String]
+entries path =
+  map entryPath <$> listEntries <$> BL.readFile path
 
 listEntries :: BL.ByteString -> [Entry]
 listEntries bs = foldEntries (:) [] throw $ read bs

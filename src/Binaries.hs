@@ -18,12 +18,12 @@ import qualified Data.List            as L
 import           Data.Word
 import           Text.Printf
 
-binaries :: FilePath -> IO ()
+binaries :: FilePath -> IO [String]
 binaries path = do
   entries          <- listEntries <$> BL.readFile path
   let binaryEntries = filterEntriesByName (".brf" `L.isSuffixOf`) entries
       binaryContent = listEntryContents binaryEntries
-  mapM_ (putStrLn . either id (unlines . map display . bGenerations) . parseBinaries . BL.toStrict) binaryContent
+  return $ concat $ map (either (: []) (map display . bGenerations) . parseBinaries . BL.toStrict) binaryContent
 
 newtype Binaries = Binaries { bGenerations :: [Generation] }
 

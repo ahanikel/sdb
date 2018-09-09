@@ -19,16 +19,8 @@ data TarFile = TarFile { tName       :: String
                        }
   deriving (Show)
 
-tars :: [String] -> IO ()
-tars []              = tars' "."  False
-tars ["--all"]       = tars' "."  True
-tars [path, "--all"] = tars' path True
-tars ["--all", path] = tars' path True
-tars [path]          = tars' path False
-tars _ = undefined
-
-tars' :: FilePath -> Bool -> IO ()
-tars' path showAll = readTarFiles path showAll >>= mapM_ (putStrLn . show)
+tars :: FilePath -> Bool -> IO [String]
+tars path showAll = readTarFiles path showAll >>= return . map show
 
 readTarFiles :: FilePath -> Bool -> IO [TarFile]
 readTarFiles dir showAll = do

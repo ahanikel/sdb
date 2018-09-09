@@ -1,7 +1,10 @@
-{-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE RecordWildCards      #-}
+{-# LANGUAGE FlexibleInstances    #-}
+{-# LANGUAGE TypeSynonymInstances #-}
 
 module Segment ( segments
                , segment
+               , SegmentId(..)
                , segmentType
                , SegmentType(..)
                , segmentIdFromMsbLsb
@@ -16,7 +19,6 @@ import           TarArchive
 
 import           Prelude                    hiding ( take )
 import           Codec.Archive.Tar
-import           Control.Monad
 import           Data.Attoparsec.ByteString
 import           Data.Bits
 import qualified Data.ByteString.Lazy       as BL
@@ -28,24 +30,6 @@ import           Text.Printf                ( printf )
 import           Text.Regex                 ( mkRegex
                                             , matchRegex
                                             )
-
-segments :: FilePath -> IO ()
-segments path = do
-  ids <- segmentIds <$> listEntries <$> BL.readFile path
-  mapM_ (putStrLn . displayId) ids
-  where
-    displayId id = (display $ segmentType id) ++ " " ++ id
-
-segment :: FilePath -> SegmentId -> IO ()
-segment path segmentId = do
-  segments   <- segmentIdEntryPairs <$> segmentEntries <$> listEntries <$> BL.readFile path
-  let segment = findSegment segmentId segments
-  either putStrLn (putStrLn . display) segment
-  
-segmentType :: SegmentId -> SegmentType
-segmentType id = if isBulkSegmentId id
-                 then SegmentTypeBulk
-                 else SegmentTypeData
 
 data SegmentType = SegmentTypeBulk
                  | SegmentTypeData
@@ -98,6 +82,22 @@ instance Display RecordRef where
 type    SegmentId    = String
 
 newtype SegmentEntry = SegmentEntry { seEntry :: Entry }
+
+instance Display SegmentId where
+  display id = (display $ segmentType id) ++ " " ++ id
+
+segments :: FilePath -> IO [SegmentId]
+segments path = segmentIds <$> listEntries <$> BL.readFile path
+
+segment :: FilePath -> SegmentId -> IO (Either String Segment)
+segment path segmentId = do
+  segments   <- segmentIdEntryPairs <$> segmentEntries <$> listEntries <$> BL.readFile path
+  return $ findSegment segmentId segments
+
+segmentType :: SegmentId -> SegmentType
+segmentType id = if isBulkSegmentId id
+                 then SegmentTypeBulk
+                 else SegmentTypeData
 
 segmentIds :: [Entry] -> [SegmentId]
 segmentIds = map segmentIdFromEntryName . segmentEntryNames . segmentEntries

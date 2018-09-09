@@ -17,12 +17,12 @@ import qualified Data.List            as L
 import           Data.Word
 import           Text.Printf
 
-index :: FilePath -> IO ()
+index :: FilePath -> IO [String]
 index path = do
   entries         <- listEntries <$> BL.readFile path
   let indexEntries = filterEntriesByName (".idx" `L.isSuffixOf`) entries
       indexContent = listEntryContents indexEntries
-  mapM_ (putStrLn . either id display . parseIndex . BL.toStrict) indexContent
+  return $ map (either id display . parseIndex . BL.toStrict) indexContent
 
 data IndexEntry = IndexEntry { ixMsb            :: Word64
                              , ixLsb            :: Word64
