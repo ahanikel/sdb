@@ -5,6 +5,7 @@ module Graph (graph) where
 
 import Display
 import ParseUtil
+import SegmentTypes
 import Segment
 import TarArchive
 

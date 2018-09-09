@@ -5,6 +5,7 @@ module Binaries (binaries) where
 
 import Display
 import ParseUtil
+import SegmentTypes
 import Segment
 import TarArchive
 

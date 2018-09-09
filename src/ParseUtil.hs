@@ -2,6 +2,7 @@ module ParseUtil where
 
 import Data.Attoparsec.ByteString
 import qualified Data.ByteString as BS
+import Data.Bits
 import Data.Word
 
 parseBigEndianUInt32 :: Parser Word32
@@ -13,6 +14,12 @@ parseBigEndianUInt64 :: Parser Word64
 parseBigEndianUInt64 = do
   uints <- count 2 parseBigEndianUInt32
   return $ sum [x * 2^y | (x,y) <- zip (map fromIntegral uints) [32, 0]]
+
+parseBigEndianUInt16 :: Parser Word16
+parseBigEndianUInt16 = do
+  msb <- fromIntegral <$> anyWord8
+  lsb <- fromIntegral <$> anyWord8
+  return $ msb `shift` 8 .|. lsb
 
 readBigEndianUInt32 :: [Word8] -> (Word32, [Word8])
 readBigEndianUInt32 bs =

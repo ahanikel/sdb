@@ -35,6 +35,7 @@ commands = [ cmdTars
            , cmdEntries
            , cmdSegments
            , cmdSegment
+           , cmdRecord
            , cmdIndex
            , cmdGraph
            , cmdBinaries
@@ -68,14 +69,25 @@ cmdSegments = Command "segments"
                       )
 
 cmdSegment  = Command "segment"
-                      "sdb segment <tarFile> <segmentId>"
-                      "Display the segment <segmentId> from <tarFile>"
+                      "sdb segment <segmentId>"
+                      "Display the segment <segmentId>"
                       ( \Config {..} ->
                           case cfgArgs of
-                            [path, segmentId] -> either (hPutStrLn stderr)
-                                                        (putStrLn . display)
-                                                 =<< segment path segmentId
+                            [segmentId] -> either (hPutStrLn stderr)
+                                                  (putStrLn . display)
+                                           =<< segment segmentId
                             _      -> usage' cfgCommand
+                      )
+
+cmdRecord   = Command "record"
+                      "sdb record <segmentId> <recordIndex>"
+                      "Display the record at <recordIndex>"
+                      ( \Config {..} ->
+                          case cfgArgs of
+                            [segmentId, recordIndex] -> either (hPutStrLn stderr)
+                                                               (putStrLn . display)
+                                                        =<< record segmentId recordIndex
+                            _ -> usage' cfgCommand
                       )
 
 cmdIndex    = Command "index"
